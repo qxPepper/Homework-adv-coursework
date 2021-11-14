@@ -10,41 +10,60 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class Server {
-    private static int SERVER_PORT = 23444;
-    List<ClientConnect> clients = new ArrayList<>();
     Logger logger = Logger.getInstance();
     Settings settings = new Settings();
+    List<ClientConnect> clients = new ArrayList<>();
+    private ServerSocket serverSocket;
+    private Socket clientSocket;
 
     public Server() {
-        Socket clientSocket = null;
-        ServerSocket serverSocket = null;
+        int serverPort = getPort();
         try {
-            serverSocket = new ServerSocket(SERVER_PORT);
+            serverSocket = new ServerSocket(serverPort);
+        } catch (IOException exception) {
+            exception.printStackTrace();
+        }
+        chat();
+    }
+
+    public void chat() {
+        try {
             System.out.println("Чат открыт!");
-            logger.log("", "Чат открыт!");
+            logger.log("Главный сервер", "Чат открыт!");
 
             while (true) {
                 clientSocket = serverSocket.accept();
-                ClientConnect client = new ClientConnect(clientSocket, this);
-                clients.add(client);
 
-                String message = client.getName() +
-                        " присоединился к чату. Количество персон в чате увеличилось до: " +
-                        clients.size() + ". Выход из чата /exit.";
-                sendToChat(message);
-
-                new Thread(client).start();
+                ClientConnect clientConnect = new ClientConnect(clientSocket, this);
+                clients.add(clientConnect);
+                new Thread(clientConnect).start();
             }
+
         } catch (IOException exception) {
-            exception.printStackTrace();
+            System.out.println("Вышли из цикла!");
+            logger.log("Главный сервер", "Вышли из цикла!");
         } finally {
             try {
-                clientSocket.close();
+                System.out.println("Чат закрыт!");
+                logger.log("Главный сервер", "Чат закрыт!");
                 serverSocket.close();
             } catch (IOException exception) {
                 exception.printStackTrace();
             }
         }
+    }
+
+    public int getPort() {
+        settings.setPort();
+        return settings.getPort();
+    }
+
+    public ServerSocket getServerSocket() {
+        return serverSocket;
+    }
+
+    public Socket getClientSocket() {
+        return clientSocket;
     }
 
     public void sendToChat(String message) {
@@ -55,12 +74,6 @@ public class Server {
 
     public void remoteFromChat(ClientConnect client) {
         clients.remove(client);
-        System.out.println(client.getName() + " вышел из чата. Количество персон в чате уменьшилось до: " +
-                clients.size());
-        sendToChat(client.getName() + " вышел из чата. Количество персон в чате уменьшилось до: " +
-                clients.size());
-        logger.log(client.getName(),  " вышел из чата. Количество персон в чате уменьшилось до: " +
-                clients.size());
     }
 }
 
@@ -76,54 +89,49 @@ public class Server {
 
 
 
-
 //package ru.netology.server;
 //
-//import ru.netology.Logger;
+//        import ru.netology.Logger;
+//        import ru.netology.Settings;
 //
-//import java.io.*;
-//import java.net.ServerSocket;
-//import java.net.Socket;
-//import java.util.ArrayList;
-//import java.util.List;
+//        import java.io.*;
+//        import java.net.ServerSocket;
+//        import java.net.Socket;
+//        import java.util.ArrayList;
+//        import java.util.List;
 //
 //public class Server {
-//    private static final int SERVER_PORT = 23444;
-//    List<ClientConnect> clients = new ArrayList<>();
 //    Logger logger = Logger.getInstance();
-//
-//
-//
-//
-//    public static void main(String[] args) {
-//        Server server = new Server();
-//    }
+//    Settings settings = new Settings();
+//    List<ClientConnect> clients = new ArrayList<>();
+//    private ServerSocket serverSocket;
+//    private Socket clientSocket;
 //
 //    public Server() {
-//        Socket clientSocket = null;
-//        ServerSocket serverSocket = null;
+//        settings.setPort();
+//        int serverPort = settings.getPort();
+//
 //        try {
-//            serverSocket = new ServerSocket(SERVER_PORT);
+//            serverSocket = new ServerSocket(serverPort);
 //            System.out.println("Чат открыт!");
-//            logger.log("", "Чат открыт!");
+//            logger.log("Главный сервер", "Чат открыт!");
 //
 //            while (true) {
 //                clientSocket = serverSocket.accept();
-//                ClientConnect client = new ClientConnect(clientSocket, this);
-//                clients.add(client);
 //
-////                String message = client.getName() +
-////                        " присоединился к чату. Количество персон в чате увеличилось до: " +
-////                        clients.size() + ". Выход из чата /exit.";
-////                sendToChat(message);
+//                ClientConnect clientConnect = new ClientConnect(clientSocket, this);
 //
-//                new Thread(client).start();
+//                clients.add(clientConnect);
+//                new Thread(clientConnect).start();
 //            }
+//
 //        } catch (IOException exception) {
-//            exception.printStackTrace();
+//            System.out.println("Вышли из цикла!");
+//            logger.log("Главный сервер", "Вышли из цикла!");
 //        } finally {
 //            try {
-//                clientSocket.close();
+//                System.out.println("Чат закрыт!");
+//                logger.log("Главный сервер", "Чат закрыт!");
 //                serverSocket.close();
 //            } catch (IOException exception) {
 //                exception.printStackTrace();
@@ -131,112 +139,21 @@ public class Server {
 //        }
 //    }
 //
+//    public ServerSocket getServerSocket() {
+//        return serverSocket;
+//    }
+//
+//    public Socket getClientSocket() {
+//        return clientSocket;
+//    }
+//
 //    public void sendToChat(String message) {
 //        for (ClientConnect element : clients) {
-//            System.out.println(element.getName() + " - " + message);
 //            element.sendMessage(message);
 //        }
 //    }
 //
 //    public void remoteFromChat(ClientConnect client) {
 //        clients.remove(client);
-//        System.out.println(client.getName() + " вышел из чата. Количество персон в чате уменьшилось до: " +
-//                clients.size());
-//        sendToChat(client.getName() + " вышел из чата. Количество персон в чате уменьшилось до: " +
-//                clients.size());
-//    }
-//}
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//package ru.netology.server;
-//
-//import ru.netology.Logger;
-//
-//import java.io.*;
-//import java.net.ServerSocket;
-//import java.net.Socket;
-//import java.util.ArrayList;
-//import java.util.List;
-//
-//public class Server {
-//    private static final int SERVER_PORT = 23444;
-//    List<ClientConnect> clients = new ArrayList<>();
-//    Logger logger = Logger.getInstance();
-//
-//    public static void main(String[] args) {
-//        Server server = new Server();
-//    }
-//
-//    public Server() {
-//        Socket clientSocket = null;
-//        ServerSocket serverSocket = null;
-//        try {
-//            serverSocket = new ServerSocket(SERVER_PORT);
-//            System.out.println("Чат открыт!");
-//            logger.log("", "Чат открыт!");
-//
-//            while (true) {
-//                clientSocket = serverSocket.accept();
-//                ClientConnect client = new ClientConnect(clientSocket, this);
-//                clients.add(client);
-//
-////                String message = client.getName() +
-////                        " присоединился к чату. Количество персон в чате увеличилось до: " +
-////                        clients.size() + ". Выход из чата /exit.";
-////                sendToChat(message);
-////
-////                new Thread(client).start();
-//            }
-//        } catch (IOException exception) {
-//            exception.printStackTrace();
-//        } finally {
-//            try {
-//                clientSocket.close();
-//                serverSocket.close();
-//            } catch (IOException exception) {
-//                exception.printStackTrace();
-//            }
-//        }
-//    }
-//
-//    public void sendToChat(String message) {
-////        for (ClientConnect element : clients) {
-////            element.sendMessage(message);
-////        }
-//
-//        for (int i = 0; i < clients.size(); i++) {
-//            System.out.println(clients.get(i).getName() + " !!! " + message);
-//            clients.get(i).sendMessage(message);
-//        }
-//    }
-//
-//    public void remoteFromChat(ClientConnect client) {
-//        clients.remove(client);
-//        System.out.println(client.getName() + " вышел из чата. Количество персон в чате уменьшилось до: " +
-//                clients.size());
-//        sendToChat(client.getName() + " вышел из чата. Количество персон в чате уменьшилось до: " +
-//                clients.size());
 //    }
 //}

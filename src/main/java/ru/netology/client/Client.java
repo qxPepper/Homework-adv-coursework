@@ -1,115 +1,83 @@
 package ru.netology.client;
 
+import ru.netology.Logger;
+import ru.netology.Settings;
+
 import java.io.*;
 import java.net.Socket;
 import java.util.Scanner;
 
 public class Client {
+    Logger logger = Logger.getInstance();
+    Settings settings = new Settings();
     private final static String SERVER_ID = "127.0.0.1";
-    private final static int SERVER_PORT = 23444;
+    private Scanner scanner;
+    private Socket socket;
+    private BufferedReader input;
+    private PrintWriter output;
+    private String message;
     private String name;
+    private boolean init;
 
     public Client() {
-        try (Socket socket = new Socket(SERVER_ID, SERVER_PORT);
-             Scanner scanner = new Scanner(System.in);
-             BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-             PrintWriter output = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true)) {
+        int serverPort = settings.getPort();
 
-            System.out.print("Введите своё имя: ");
-            name = scanner.nextLine();
-            output.println(name);
-            output.flush();
-            System.out.println(input.readLine());
-
-            while (true) {
-                if (input.ready()) {
-                    String str;
-                    while ((str = input.readLine()) != null) {
-                        System.out.println(str);
-                    }
-                }
-
-                System.out.print(" >>> ");
-                String entry = scanner.nextLine();
-
-                if (entry.equals("/exit")) {
-                    output.println(entry);
-                    output.flush();
-                    break;
-                }
-
-                output.println("[" + name + "] " + entry);
-                output.flush();
-
-                System.out.println(input.readLine());
-            }
+        try {
+            socket = new Socket(SERVER_ID, serverPort);
+            scanner = new Scanner(System.in);
+            input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            output = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true);
+            init = true;
 
         } catch (IOException exception) {
             exception.printStackTrace();
         }
+
+        new Thread(new OutMessage()).start();
+
+        new Thread(new InMessage()).start();
+    }
+
+    private class OutMessage implements Runnable {
+        @Override
+        public void run() {
+            while (true) {
+                if (init) {
+                    init = false;
+                    System.out.print("Введите своё имя: ");
+                    name = scanner.nextLine();
+                    message = name;
+                } else {
+                    message = scanner.nextLine();
+                    logger.log(name, message);
+                }
+
+                if (message.equals("/exit")) {
+                    output.println(message);
+                    break;
+                }
+
+                output.println(message);
+            }
+        }
+    }
+
+    private class InMessage implements Runnable {
+        @Override
+        public void run() {
+            try {
+                while (true) {
+                    while ((message = input.readLine()) != null) {
+                        if (message.equals("/exit")) {
+                            socket.close();
+                            return;
+                        }
+                        System.out.println(message);
+                    }
+                }
+            } catch (IOException exception) {
+                exception.printStackTrace();
+            }
+        }
     }
 }
-
-
-
-
-
-
-
-
-//package ru.netology.client;
-//
-//        import ru.netology.Logger;
-//
-//        import java.io.*;
-//        import java.net.Socket;
-//        import java.util.Scanner;
-//
-//public class Client {
-//    private final static String SERVER_ID = "127.0.0.1";
-//    private final static int SERVER_PORT = 23444;
-//    private final Logger logger = Logger.getInstance();
-//    private String message;
-//
-//
-//    public Client(String name) {
-//        try (Socket socket = new Socket(SERVER_ID, SERVER_PORT);
-//             Scanner scanner = new Scanner(System.in);
-//             BufferedReader input = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-//             PrintWriter output = new PrintWriter(new OutputStreamWriter(socket.getOutputStream()), true)) {
-//            boolean init = true;
-//
-//
-//            output.println(name);
-//            output.flush();
-//            System.out.println(input.readLine());
-//
-//            while (true) {
-//                if (input.ready()) {
-//                    String str;
-//                    while ((str = input.readLine()) != null) {
-//                        System.out.println(str);
-//                    }
-//                }
-//
-//                System.out.print(" >>> ");
-//                String entry = scanner.nextLine();
-//
-//                if (entry.equals("/exit")) {
-//                    output.println(entry);
-//                    output.flush();
-//                    break;
-//                }
-//
-//                output.println("[" + name + "] " + entry);
-//                output.flush();
-//
-//                System.out.println(input.readLine());
-//            }
-//
-//        } catch (IOException exception) {
-//            exception.printStackTrace();
-//        }
-//    }
-//}
-
